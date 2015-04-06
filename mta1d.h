@@ -49,9 +49,16 @@ int mta_1doper(double out[],const double a[],const double b[],const int lout,con
 void mta_1dminus_one(double ar[],const int l);
 #define mta_s_1dn(A)      mta_1dminus_one(A,numel_1d(A))
 
+#define mta_s_1dfx(OUT, A, fx)  mta_1dfx(OUT, A, mta_1dnumel(OUT), mta_1dnumel(A), fx)
+void mta_1dfx(double out[], double ar[], const int lout, const int la, double (*fx)(double));
+
 void mta_1dvecgen(double *out,const double init,const double inc, const double endi, const int n);
 #define array1d_vec_gen(OUT,INIT,INCR,END)      mta_1dvecgen(&OUT[0], INIT, INCR , END, mta_1dnumel(OUT))
  
+int mta_1dmin(double ar[], int la);
+int mta_1dmax(double ar[], int la);
+#define mta_s_1dmin(A)      mta_1dmin(A, mta_1dnumel(A)) 
+#define mta_s_1dmax(A)      mta_1dmax(A, mta_1dnumel(A)) 
 
 #ifdef	__cplusplus
 }

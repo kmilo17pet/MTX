@@ -46,34 +46,36 @@ typedef _Matrix, *matrix;
 #endif
     
     
-#define MTX_PRINT_FORMAT  "%8.7g\t"
+#define MTX_PRINT_FORMAT    "%8.7g\t"
 #define MATRIX              matrix
 #define Matrix              matrix
-#define mtx_show(M)             fputs("["#M"]",stdout);mtx_disp(M);\
+#define mtx_show(M)         fputs("["#M"]",stdout);mtx_disp(M);\
          
 #define mtx_dispn(args...)  mtx_ndisp(50,args,-1)
 matrix mtx_ndisp(int n, ...);
 
 #define mtxdef(_VAR_)       matrix _VAR_=NULL
 #define mtx_del(M)          _mtx_del(M);M=NULL
-#define mtx_length(M)       (((M->rows)>(M->cols))? M->rows : M->cols)                  /*Length of Matrix X - max(rows,cols)*/    
-#define mtx_isempty(M)      (!(M->rows)&&!(M->cols))                                    /* TRUE if M=[] */
-#define mtx_isrow(M)        (((M->cols)>0)&&((M->rows)==1))                             /* TRUE if size(M)=1xN */
-#define mtx_iscolumn(M)     (((M->rows)>0)&&((M->cols)==1))                             /* TRUE if size(M)=Nx1 */
-#define mtx_isvector(M)     (mtx_isrow(M) || mtx_iscolumn(M))                           /* TRUE if M is vector (row or column)*/
-#define mtx_numel(M)        (((M)->rows)*((M)->cols))
+#define mtx_length(M)       ( (M==NULL)? -1 : (((M->rows)>(M->cols))? M->rows : M->cols) )      /*Length of Matrix X - max(rows,cols)*/    
+#define mtx_isempty(M)      ( (M==NULL)? 1 : ((M->cols<=0)|(M->rows<=0)) )                      /* TRUE if M=[] */
+#define mtx_isrow(M)        ( (M==NULL)? 0 : (((M->cols)>0)&&((M->rows)==1)) )                  /* TRUE if size(M)=1xN */
+#define mtx_iscolumn(M)     ( (M==NULL)? 0 : (((M->rows)>0)&&((M->cols)==1)) )                  /* TRUE if size(M)=Nx1 */
+#define mtx_isvector(M)     ( (M==NULL)? 0 : (mtx_isrow(M) || mtx_iscolumn(M)) )               /* TRUE if M is vector (row or column)*/
+#define mtx_numel(M)        ( (M==NULL)? -1 :  (((M)->rows)*((M)->cols)) )
     
-#define mtx_issquare(M)     ((M->rows)==(M->cols))
-#define mtx_ismultiply(A,B) ((A->cols) == (B->rows))
-#define mtx_samedim(A,B)    (((A->rows) == (B->rows)) && ((A->cols) != (B->cols)))
+#define mtx_issquare(M)     ( (M==NULL)? 0 :  ((M->rows)==(M->cols)) )
+#define mtx_ismultiply(A,B) ( (M==NULL)? 0 : ((A->cols) == (B->rows)) )
+#define mtx_samedim(A,B)    ( (M==NULL)? 0 : (((A->rows) == (B->rows)) && ((A->cols) != (B->cols))) )
+#define mtx_lastc(M)        ((M==NULL)? -1 :(M->cols)-1)
+#define mtx_lastr(M)        ((M==NULL)? -1 :(M->rows)-1)
 
-#define mtx_setrow(M,A,R)              mat_submat_set(M,A,R,R,0,lastc(M))                      /* M(R,:)=A */
-#define mtx_setcol(M,A,C)              mat_submat_set(M,A,0,lastr(M),C,C)                      /* M(R,:)=A */
+#define mtx_setrow(M,A,R)              mtx_setsubset(M,A,R,R,0,mtx_lastc(M))                      /* M(R,:)=A */
+#define mtx_setcol(M,A,C)              mtx_setsubset(M,A,0,mtx_lastr(M),C,C)                      /* M(R,:)=A */
 
-#define mtx_getrow(M,R)                mat_submat_get(M,R,R,0,lastc(M))                        /* M(R,:) Get column from matrix */
-#define mtx_getcol(M,C)                mat_submat_get(M,0,lastr(M),C,C)                        /* M(:,C) Get row from matrix */
-#define mtx_getrows(M,F1,F2)           mat_submat_get(M,F1,F2,0,lastc(M))                      /* M(F1:F2,:) Get columns from matrix */
-#define mtx_getcols(M,C1,C2)           mat_submat_get(M,0,lastr(M),C1,C2)                      /* M(:,C1:C2) Get rows from matrix */    
+#define mtx_getrow(M,R)                mtx_getsubset(M,R,R,0,mtx_lastc(M))                        /* M(R,:) Get column from matrix */
+#define mtx_getcol(M,C)                mtx_getsubset(M,0,mtx_lastr(M),C,C)                        /* M(:,C) Get row from matrix */
+#define mtx_getrows(M,F1,F2)           mtx_getsubset(M,F1,F2,0,mtx_lastc(M))                      /* M(F1:F2,:) Get columns from matrix */
+#define mtx_getcols(M,C1,C2)           mtx_getsubset(M,0,mtx_lastr(M),C1,C2)                      /* M(:,C1:C2) Get rows from matrix */    
 
 
 
@@ -144,6 +146,10 @@ matrix mtx_lspcf(double *X, double *Y, int n, int m);
 matrix mtx_dot(matrix A, matrix B);
 matrix mtx_cholesky(matrix A);
         
+matrix mtx_getsubset(const matrix m, int f1, int f2, int c1, int c2);
+void mtx_setsubset(matrix m1, const matrix m2,int f1,int f2,int c1,int c2);
+
+
 #ifdef	__cplusplus
 }
 #endif

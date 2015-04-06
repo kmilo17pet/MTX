@@ -65,8 +65,25 @@ int mta_1doper(double out[],const double a[],const double b[],const int lout,con
     }
 }
 /*============================================================================*/
-void mta_1dminus_one(double ar[],const int l){
+void mta_1dminus_one(double ar[], const int l){
     int k;
     for (k=0;k<l;k++) ar[k]=-ar[k];
+}
+/*============================================================================*/
+void mta_1dfx(double out[], double ar[], const int lout, const int la, double (*fx)(double)){
+    int k;
+    for (k=0;k<la;k++) out[k]=(*fx)(ar[k]);
+}
+/*============================================================================*/
+int mta_1dmin(double ar[], int la){
+    int index=0;
+    int k;
+    for(k=0;k<la;k++) index = (ar[k]<ar[index])? k: index;   
+}
+/*============================================================================*/
+int mta_1dmax(double ar[], int la){
+    int index=0;
+    int k;
+    for(k=0;k<la;k++) index = (ar[k]>ar[index])? k: index;   
 }
 /*============================================================================*/

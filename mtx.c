@@ -16,6 +16,9 @@
  *	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+#ifdef _CVI_
+    #include "toolbox.h"  
+#endif
 #include "mtx.h"
 /*============================================================================*/
 matrix mtx_new(const unsigned char rows,const unsigned char cols){
@@ -657,6 +660,9 @@ double mtx_det(const matrix M){
     matrix U = mtx_new(M->rows,M->cols);
     double det=1,signo=1.0;
     signo=mtx_lu(L,U,M); //determinant usign LU factorization
+#ifdef _CVI_ 
+    #define isnan(_x_)  IsNotANumber(_x_)
+#endif
     if(isnan(signo)) {
         mtx_del(L);
         mtx_del(U);
@@ -1004,17 +1010,13 @@ matrix mtx_expm(const matrix M, const double alpha){
     matrix E = mtx_gadd(1, I,  c, A); //E = eye(size(A)) + c*A;
     matrix D = mtx_gadd(1, I, -c, A); //D = eye(size(A)) - c*A;  
     matrix cX = mtx_new(A->rows, A->cols);
-    matrix Xn = mtx_new(A->rows, A->cols);
     matrix iD = mtx_new(A->rows, A->cols);
-    for(k=2;k<=q;k++){
+    for(k=2;k<=q;k++,p=!p){
         c = c*(q-k+1)/(k*(2*q-k+1));
-        mtx_dgemm(1.0, A, '.', X, '.', 0, Xn); // X = A*X
-        mtx_memcpy(X,Xn); 
+        mtx_dgemm(1.0, A, '.', X, '.', 0, X); // X = A*X
         mtx_OUT_equal_kA(cX, X, c); // cX = c*X
         mtx_A_equal_A_plus_B(E, cX); // E = E + cX;
-        if(p==1) mtx_A_equal_A_plus_B(D, cX);
-        else  mtx_A_equal_A_sub_B(D, cX);
-        p=!p;
+        mtx_dgema(1.0, D, '.', ((p==1)? 1.0: -1.0) , cX, '.');  // D = D + cX  or D = D - cX  (p depends)
     }
     iD = mtx_inv(D);
     mtx_dgemm(1.0, iD, '.', E, '.', 0, I); // I = iD*E
@@ -1023,7 +1025,7 @@ matrix mtx_expm(const matrix M, const double alpha){
         mtx_dgemm(1.0, E, '.', E, '.', 0, I); //I = E*E
         mtx_memcpy(E,I);
     } 
-    mtx_del(A);mtx_del(X);mtx_del(I);/*mtx_del(cA);*/mtx_del(D);mtx_del(cX);mtx_del(Xn);mtx_del(iD);    
+    mtx_del(A);mtx_del(X);mtx_del(I);mtx_del(D);mtx_del(cX);mtx_del(iD);    
     return E;
 }
 /*============================================================================*/
@@ -1068,3 +1070,4 @@ matrix mtx_dot(matrix A, matrix B){
     }
     return C;
 }
+/*============================================================================*/
