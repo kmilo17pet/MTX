@@ -112,8 +112,8 @@ int mtx_memcpy(matrix dst, matrix scr);
 
 matrix mtx_mean(const matrix m);
 double mtx_cumsum(const matrix m);
-matrix mat_rpinv(const matrix A);
-matrix mat_lpinv(const matrix A);
+matrix mtx_rpinv(const matrix A, double tol);
+matrix mtx_lpinv(const matrix A, double tol);
 double mtx_cumprod(const matrix m);
 matrix mtx_produ(const matrix m);
 matrix mtx_sum(const matrix m);

@@ -801,27 +801,24 @@ matrix mtx_mean(const matrix m){
     return(sm);
 }
 /*============================================================================*/
-matrix mat_rpinv(const matrix A){
+matrix mtx_rpinv(const matrix A, double tol){
     if(A==NULL) return NULL; 
-    matrix AT=mtx_t(A);
-    matrix AxAT=mtx_prod(1.0,A,AT);
-    matrix iAxAT=mtx_inv(AxAT);
-    matrix res = mtx_prod(1.0,AT,iAxAT);
-    mtx_del(AT);
-    mtx_del(AxAT);
+    matrix T = mtx_eye(A->rows, A->cols);   
+    mtx_dgemm(1.0, A, '.', A, 'T',tol, T);
+    matrix iAxAT=mtx_inv(T);
+    mtx_dgemm(1.0, A, 't', iAxAT, '.',0.0, T);
     mtx_del(iAxAT);
-    return res; //AT*(A*AT)^-1
+    return T; //AT*(A*AT)^-1
 }
 /*============================================================================*/
-matrix mat_lpinv(const matrix A){
-    matrix AT=mtx_t(A);
-    matrix AxAT=mtx_prod(1.0,AT,A);
-    matrix iATxA=mtx_inv(AxAT);
-    matrix res = mtx_prod(1.0,iATxA,AT);
-    mtx_del(AT);
-    mtx_del(AxAT);
+matrix mtx_lpinv(const matrix A, double tol){  
+    if(A==NULL) return NULL; 
+    matrix T = mtx_eye(A->rows, A->cols);   
+    mtx_dgemm(1.0, A, 't', A, '.',tol, T);
+    matrix iATxA=mtx_inv(T);
+    mtx_dgemm(1.0, iATxA, '.', A, 't',0.0, T);
     mtx_del(iATxA);
-    return res; //(AT*A)^-1 *AT
+    return T; //(AT*A)^-1 *AT
 }
 /*============================================================================*/
 double mtx_cumprod(const matrix m){
@@ -966,8 +963,7 @@ matrix mtx_grams(const matrix M, matrix R){
         norm=0.0;
         for(i=0;i<A->rows;i++) norm+=pow(fabs(A->pos[i][j]),2.0); norm=sqrt(norm); //vectorial norm for j column
         if(norm<tol){
-            mtx_del(Q);
-            mtx_del(A);
+            mtx_del(Q);mtx_del(A);
             return NULL; // Columns are linearly dependent.
         }
         for(i=0;i<A->rows;i++) Q->pos[i][j]=A->pos[i][j]/norm;
@@ -975,9 +971,7 @@ matrix mtx_grams(const matrix M, matrix R){
     Qt=mtx_t(Q); 
     Rt=mtx_prod(1.0,Qt,M); 
     mtx_memcpy(R,Rt);
-    mtx_del(A);
-    mtx_del(Rt);
-    mtx_del(Qt);
+    mtx_del(A);mtx_del(Rt);mtx_del(Qt);
     return Q;
 }
 /*============================================================================*/
