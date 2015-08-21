@@ -520,7 +520,7 @@ matrix mtx_powui(const matrix m, unsigned int power){
         matrix temp=mtx_new(m->rows,m->cols);
         mtx_memcpy(md,m);
         for (k=1;k<power;k++){
-            mtx_OUT_equal_AxB(temp,1.0,md,m);
+            mtx_OUT_equal_AxB(temp,1.0,md,m); 
             mtx_memcpy(md,temp);
         }
         mtx_del(temp);
@@ -939,39 +939,30 @@ double mtx_colspprod(const matrix A, const int j, const int k){
 /*============================================================================*/
 matrix mtx_grams(const matrix M, matrix R){
     if (M==NULL || R==NULL) return NULL;
-    if (M->rows != M->cols) return NULL;
-    matrix A=mtx_cpy(M);
+    if ( (M->rows != M->cols) || (R->rows != M->rows) || (R->cols != M->cols) ) return NULL;
+    mtx_memcpy(R,M);
     matrix Q=mtx_new(M->rows,M->cols);
-    matrix Rt=NULL;
-    matrix Qt=NULL;
     int i,j,k,n=M->rows;
     double mult;
     double tol = sqrt(DBL_EPSILON);
     double norm;
-    for(i=0;i<n;i++){ //just to be sure R is zeros
-        for(j=0;j<n;j++) R->pos[i][j]=0.0;
-    }  
-
-    for(j=0;j<n;j++){
-        for(k=0;k<=(j-1);k++){
-            mult = mtx_colspprod(A,j,k)/mtx_colspprod(A,k,k);
-            for(i=0;i<A->rows;i++)  A->pos[i][j] = A->pos[i][j] - mult*A->pos[i][k]; 
-        }
-    }
     
     for(j=0;j<n;j++){
+        for(k=0;k<=(j-1);k++){
+            mult = mtx_colspprod(R,j,k)/mtx_colspprod(R,k,k);
+            for(i=0;i<R->rows;i++)  R->pos[i][j] = R->pos[i][j] - mult*R->pos[i][k]; 
+        }
+    }
+    for(j=0;j<n;j++){
         norm=0.0;
-        for(i=0;i<A->rows;i++) norm+=pow(fabs(A->pos[i][j]),2.0); norm=sqrt(norm); //vectorial norm for j column
+        for(i=0;i<R->rows;i++) norm+=pow(fabs(R->pos[i][j]),2.0); norm=sqrt(norm); //vectorial norm for j column
         if(norm<tol){
-            mtx_del(Q);mtx_del(A);
+            mtx_del(Q);
             return NULL; // Columns are linearly dependent.
         }
-        for(i=0;i<A->rows;i++) Q->pos[i][j]=A->pos[i][j]/norm;
+        for(i=0;i<R->rows;i++) Q->pos[i][j]=R->pos[i][j]/norm;
     }
-    Qt=mtx_t(Q); 
-    Rt=mtx_prod(1.0,Qt,M); 
-    mtx_memcpy(R,Rt);
-    mtx_del(A);mtx_del(Rt);mtx_del(Qt);
+    mtx_dgemm(1.0, Q, 't', M, '.', 0, R); // R = Q'*M
     return Q;
 }
 /*============================================================================*/

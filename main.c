@@ -4,8 +4,8 @@
 
 int main(void){    
     double a[3][3]={
-    {0,1,0},
-    {0,0,2},
+    {0,1,8},
+    {3,0,2},
     {0,1,1},
     };
     double b[3][3]={
@@ -26,18 +26,9 @@ int main(void){
         {1,    5,   15,   35,   70},
     };
     matrix A=mtx_2dtomtx(a);
-    mtx_dispn(A, mtx_lpinv(A, 0.00001), mtx_rpinv(A, 0.00001));
-    matrix B=mtx_2dtomtx(b);
-    mtx_dispn(mtx_hcatn(A,B));
-    return;
-    
-    
-    matrix C=mtx_2dtomtx(c);
-    matrix Z=NULL;
-
-    mtx_dispn(A,B,C);
-    mtx_dgemm(-0.01, A,' ', B,'T', 2.0,C);
-    mtx_dispn(C);    
+    matrix R = mtx_new(A->rows, A->cols);
+    matrix Q = mtx_qr(A, R);
+    mtx_dispn(A,Q,R,mtx_prod(1.0,Q,R));    
     
 
         
