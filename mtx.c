@@ -50,8 +50,10 @@ matrix mtx_new(const unsigned char rows,const unsigned char cols){
 void _mtx_del(const matrix M){
     if (M==NULL) return;
     int i=0;
-    for (i=0;i<M->rows;i++)
-        free(M->pos[i]);
+    if(!M->mem){
+        for (i=0;i<M->rows;i++)
+            free(M->pos[i]);
+    }
     free(M->pos);
     free(M);    
 }
@@ -458,8 +460,8 @@ matrix mtx_inv(const matrix X){
         for(l=j+1; l<A->cols; l++){
             m=A->pos[l][j];
             for(k=0; k<A->cols; k++){
-                A->pos[l][k] = A->pos[l][k] - m*A->pos[j][k];
-                C->pos[l][k] = C->pos[l][k] - m*C->pos [j][k];
+                A->pos[l][k] -= m*A->pos[j][k];
+                C->pos[l][k] -= m*C->pos [j][k];
             }
         }
     }
@@ -468,8 +470,8 @@ matrix mtx_inv(const matrix X){
         for (k=j-1; k>=0; k--){
             m=A->pos[k][j]; 
             for(l=0; l<A->cols; l++){
-                A->pos[k][l] = A->pos[k][l] - m*A->pos[j][l];
-                C->pos[k][l] = C->pos[k][l] - m*C->pos[j][l];
+                A->pos[k][l] -= m*A->pos[j][l];
+                C->pos[k][l] -= m*C->pos[j][l];
             }
     }
     
@@ -912,20 +914,28 @@ matrix mtx_sum(const matrix m){
 }
 /*============================================================================*/
 matrix mtx_2d2mtx(const double *array2d,const int nf,const int nc){
-    matrix mout=mtx_new(nf,nc);
-    int f,c;
+    matrix mout = (matrix) malloc(sizeof(_Matrix));
+    mout->rows = nf;
+    mout->cols = nc;
+    mout->mem  = 1;
+    int f;
+    mout->pos =(double**) calloc(nf,sizeof(double*));
     for (f=0;f<nf;f++){
-        for (c=0;c<nc;c++)
-            mout->pos[f][c]=array2d[f*nc+c];
-    }
+        mout->pos[f] = (double*)array2d+f*nc;
+    }  
     return(mout);
 }
 /*============================================================================*/
 matrix mtx_1d2mtx(const double *array1d, const int arraylength){
-    matrix mout=mtx_new(arraylength,1);
-    int i;
-    for (i=0;i<arraylength;i++)
-        mout->pos[i][0]=array1d[i];        
+    matrix mout = (matrix) malloc(sizeof(_Matrix));
+    mout->rows = arraylength;
+    mout->cols = 1;
+    mout->mem = 1;
+    mout->pos = (double**) calloc(arraylength,sizeof(double*));
+    int f;
+    for (f=0;f<arraylength;f++){
+        mout->pos[f] = (double*)array1d+f;
+    }      
     return(mout);
 }
 /*============================================================================*/

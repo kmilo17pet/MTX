@@ -34,7 +34,7 @@ extern "C" {
 
     
 struct {
-    unsigned char rows,cols;
+    unsigned char rows,cols,mem;
     double **pos; 
 }
 #if defined(__GNUC__)
@@ -125,7 +125,7 @@ matrix mtx_min(const matrix m);
 matrix mtx_2d2mtx(const double *array2d,const int nf,const int nc);
 #define mtx_2dtomtx(A)      mtx_2d2mtx(&A[0][0],(sizeof(A)/sizeof(A[0])), (sizeof(A[0])/sizeof(A[0][0])))
 matrix mtx_1d2mtx(const double *array1d, const int arraylength);
-#define mtx_1dtomtx(A)      mtx_2d2mtx(&A[0][0],(sizeof(A)/sizeof(A[0])))
+#define mtx_1dtomtx(A)      mtx_1d2mtx(A,(sizeof(A)/sizeof(A[0])))
 
 double mtx_colspprod(const matrix A, const int j, const int k);
 matrix mtx_grams(const matrix M, matrix R); // -> ok

@@ -25,22 +25,28 @@ int main(void){
         {1,    4,   10,   20,   35},
         {1,    5,   15,   35,   70},
     };
+    double y[6]={8, 8 , 9, 1 , 2 ,3};
+    matrix Y= mtx_1dtomtx(y);
+    matrix W = mtx_2dtomtx(z);
+    z[0][0]=.2;
+    y[2]=-2;
     matrix A=mtx_2dtomtx(a);
+
+    matrix Z=mtx_2dtomtx(z);
     matrix R = mtx_new(A->rows, A->cols);
     matrix Q = mtx_qr(A, R);
-    mtx_dispn(A,Q,R,mtx_prod(1.0,Q,R));    
-    
-
-        
-
-
-    //matrix B=mtx_2dtomtx(b);
-    //matrix C=mtx_2dtomtx(c);
-    //matrix Z=mtx_2dtomtx(z);
-    //Z=mtx_inv(A);
-    //mtx_dispn(A,Z);
-    //mtx_dispn(A,B,C,Z);
-    //mtx_dispn(Z,mtx_cholesky(Z));
+    mtx_dispn(A,Q,R,mtx_prod(1.0,Q,R),mtx_inv(A),mtx_inv(Z), W, Y);  
+    long i;
+    matrix L=NULL;
+    for(i=0;i<1000000;i++){
+        L=mtx_inv(Z);
+        mtx_del(L);
+    }
+    mtx_del(Y);
+    mtx_del(W);
+    mtx_del(R);
+    mtx_del(A);
+    mtx_del(Q);mtx_del(Z);
     
     return EXIT_SUCCESS;
 }
