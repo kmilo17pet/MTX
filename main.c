@@ -38,15 +38,17 @@ int main(void){
     mtx_dispn(A,Q,R,mtx_prod(1.0,Q,R),mtx_inv(A),mtx_inv(Z), W, Y);  
     long i;
     matrix L=NULL;
-    for(i=0;i<1000000;i++){
-        L=mtx_inv(Z);
+    matrix U=mtx_rand(100,100);
+    while(1){
+        L=mtx_inv(U);
         mtx_del(L);
+        puts("running");
     }
     mtx_del(Y);
     mtx_del(W);
     mtx_del(R);
     mtx_del(A);
-    mtx_del(Q);mtx_del(Z);
+    mtx_del(Q);mtx_del(Z);mtx_del(U);
     
     return EXIT_SUCCESS;
 }

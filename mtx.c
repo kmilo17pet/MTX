@@ -44,6 +44,7 @@ matrix mtx_new(const unsigned char rows,const unsigned char cols){
     }
     m->rows = rows;
     m->cols = cols;
+    m->mem = 0;
     return m;
 }
 /*============================================================================*/
