@@ -79,10 +79,10 @@ matrix mtx_ndisp(int n, ...);
 
 
 
-matrix mtx_new(const unsigned char rows,const unsigned char cols);
+matrix mtx_new(const int rows,const int cols);
 void _mtx_del(const matrix M);
 matrix mtx_cpy(const matrix M);
-matrix mtx_eye(unsigned char n, const double alpha);
+matrix mtx_eye(unsigned short n, const double alpha);
 matrix mtx_diag(const matrix m);
 double mtx_trace(const matrix A);
 void mtx_disp(const matrix M);
@@ -91,7 +91,7 @@ matrix mtx_gadd(const double alpha, const matrix A, const double beta, const mat
 matrix mtx_ptpprod(const matrix A, const matrix B);
 matrix mtx_ptpdiv(const matrix A, const matrix B);
 matrix mtx_koper(const matrix A, const char oper, const double k);
-matrix mtx_rand(unsigned rows, unsigned char cols);
+matrix mtx_rand(unsigned short rows, unsigned short cols);
 matrix mtx_prod(const double alpha, const matrix A, const matrix B);
 
 int mtx_OUT_equal_AxB(matrix OUT, const double alpha, const matrix A, const matrix B);
@@ -147,8 +147,11 @@ matrix mtx_dot(matrix A, matrix B);
 matrix mtx_cholesky(matrix A);
         
 matrix mtx_getsubset(const matrix m, int f1, int f2, int c1, int c2);
-void mtx_setsubset(matrix m1, const matrix m2,int f1,int f2,int c1,int c2);
+int mtx_setsubset(matrix m1, const matrix m2,int f1,int f2,int c1,int c2);
 
+matrix mtx_kron(matrix a, matrix b);
+matrix mtx_sylvester(matrix A, matrix B, matrix C);
+matrix mtx_vec(matrix A);
 
 #ifdef	__cplusplus
 }

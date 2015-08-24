@@ -21,7 +21,7 @@
 #endif
 #include "mtx.h"
 /*============================================================================*/
-matrix mtx_new(const unsigned char rows,const unsigned char cols){
+matrix mtx_new(const int rows,const int cols){
     if (cols<=0 || rows<=0) return NULL;
     matrix m;
     int i;
@@ -69,7 +69,7 @@ matrix mtx_cpy(const matrix M){
     return C;
 }
 /*============================================================================*/
-matrix mtx_eye(unsigned char n, const double alpha){
+matrix mtx_eye(unsigned short n, const double alpha){
     if (n<=0) return;
     matrix I = mtx_new(n,n);
     while(n--)  I->pos[n][n]=alpha;
@@ -207,7 +207,7 @@ matrix mtx_koper(const matrix A, const char oper, const double k){
     return C;        
 }
 /*============================================================================*/
-matrix mtx_rand(unsigned rows, unsigned char cols){
+matrix mtx_rand(unsigned short rows, unsigned short cols){
     static int flagseed=0;
     if ((rows<=0)||(cols<=0)) return(NULL);
     if (!flagseed){
@@ -372,6 +372,7 @@ int mtx_dgema(const double alpha, const matrix a, char transa, const double beta
     else{
         if(nota){
             /*=================== Form  A = alpha*A + beta*B' =======================*/
+            
         }
         else{
             /*=================== Form  A = alpha*A' + beta*B' =======================*/
@@ -646,14 +647,15 @@ matrix mtx_getsubset(const matrix m, int f1, int f2, int c1, int c2){
     return (outm);
 }
 /*============================================================================*/
-void mtx_setsubset(matrix m1, const matrix m2,int f1,int f2,int c1,int c2){
-    if( m1 == NULL || m2 == NULL) return;
-    if( (m2->rows > m1->rows)  || (m2->cols > m1->cols) ) return;
+int mtx_setsubset(matrix m1, const matrix m2,int f1,int f2,int c1,int c2){
+    if( m1 == NULL || m2 == NULL) return -1;
+    if( (m2->rows > m1->rows)  || (m2->cols > m1->cols) ) return -1;
     int f,c;
     for (f=f1;f<=f2;f++){
         for (c=c1;c<=c2;c++)
             m1->pos[f][c] = m2->pos[f-f1][c-c1];
     }   
+    return 0;
 }
 /*============================================================================*/
 double mtx_det(const matrix M){
@@ -1065,5 +1067,64 @@ matrix mtx_dot(matrix A, matrix B){
         for(m=0;m<A->rows;m++)   C->pos[0][n]+= A->pos[m][n]*B->pos[m][n];
     }
     return C;
+}
+/*============================================================================*/
+matrix mtx_kron(matrix a, matrix b){
+    int i, j, k, l;
+    int m, p, n, q;
+    double da;
+    m = a->rows;
+    p = a->cols;
+    n = b->rows;
+    q = b->cols;
+    matrix c = mtx_new(m*n, p*q);
+    for (i = 0; i < m; i++)    {
+        for (j = 0; j < p; j++)   {
+            da = a->pos[i][j];
+            for (k = 0; k < n; k++)   {
+                for (l = 0; l < q; l++)  c->pos[n*i+k][q*j+l] =  da * b->pos[k][l];                              
+            }
+        }
+    }
+    return c;
+}
+/*============================================================================*/
+matrix mtx_sylvester(matrix A, matrix B, matrix C){
+    if ((A==NULL) || (B==NULL) || (C==NULL))
+    if ((A->rows != A->cols) || (B->rows != B->cols) || (C->rows != A->rows) || (C->cols != B->cols)) return NULL;
+    matrix Bt,I1,I2,R1,R2,R3,vC,vS;
+    int f,c;
+    matrix S = mtx_new(C->rows, C->cols);
+    Bt = mtx_t(B);
+    I1 = mtx_eye(B->rows, 1.0);
+    I2 = mtx_eye(A->rows, 1.0);        
+    R1 = mtx_kron(I1,A);
+    mtx_del(I1);
+    R2 = mtx_kron(Bt, I2);
+    mtx_del(Bt);mtx_del(I2);
+    R3 = mtx_gadd(1.0, R1, 1.0, R2);
+    mtx_del(R1);mtx_del(R2);
+    vC = mtx_vec(C);
+    vS = mtx_linsolve(R3,vC);
+    mtx_del(R3);mtx_del(vC);
+    for(c=0;c<S->cols;c++){
+        for(f=0;f<S->rows;f++){
+            S->pos[f][c]=vS->pos[f+c*S->rows][0];
+        }
+    }
+    mtx_del(vS);
+    return S;
+}
+/*============================================================================*/
+matrix mtx_vec(matrix A){
+    if(A == NULL) return NULL;
+    int f,c;
+    matrix v = mtx_new(A->rows*A->cols, 1);
+    for(c=0;c<A->cols;c++){
+        for(f=0;f<A->rows;f++){
+            v->pos[f+c*A->rows][0] = A->pos[f][c];
+        }
+    }
+    return v;
 }
 /*============================================================================*/
