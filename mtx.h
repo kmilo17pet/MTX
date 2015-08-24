@@ -82,7 +82,7 @@ matrix mtx_ndisp(int n, ...);
 matrix mtx_new(const int rows,const int cols);
 void _mtx_del(const matrix M);
 matrix mtx_cpy(const matrix M);
-matrix mtx_eye(unsigned short n, const double alpha);
+matrix mtx_eye(int n, const double alpha);
 matrix mtx_diag(const matrix m);
 double mtx_trace(const matrix A);
 void mtx_disp(const matrix M);
@@ -91,7 +91,7 @@ matrix mtx_gadd(const double alpha, const matrix A, const double beta, const mat
 matrix mtx_ptpprod(const matrix A, const matrix B);
 matrix mtx_ptpdiv(const matrix A, const matrix B);
 matrix mtx_koper(const matrix A, const char oper, const double k);
-matrix mtx_rand(unsigned short rows, unsigned short cols);
+matrix mtx_rand(int rows, int cols);
 matrix mtx_prod(const double alpha, const matrix A, const matrix B);
 
 int mtx_OUT_equal_AxB(matrix OUT, const double alpha, const matrix A, const matrix B);

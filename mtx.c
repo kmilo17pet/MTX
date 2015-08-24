@@ -69,7 +69,7 @@ matrix mtx_cpy(const matrix M){
     return C;
 }
 /*============================================================================*/
-matrix mtx_eye(unsigned short n, const double alpha){
+matrix mtx_eye(int n, const double alpha){
     if (n<=0) return;
     matrix I = mtx_new(n,n);
     while(n--)  I->pos[n][n]=alpha;
@@ -207,7 +207,7 @@ matrix mtx_koper(const matrix A, const char oper, const double k){
     return C;        
 }
 /*============================================================================*/
-matrix mtx_rand(unsigned short rows, unsigned short cols){
+matrix mtx_rand(int rows, int cols){
     static int flagseed=0;
     if ((rows<=0)||(cols<=0)) return(NULL);
     if (!flagseed){
@@ -487,7 +487,7 @@ matrix mtx_linsolve(const matrix A, const matrix B){
     matrix X = mtx_inv(A);
     if (X==NULL) return NULL;
     matrix y = mtx_new(A->rows ,1);    
-    y = mtx_prod(1.0,X,B);
+    mtx_dgemm(1.0,X,'.',B,'.', 0.0, y);
     mtx_del(X);
     return y;
 }
@@ -1092,21 +1092,25 @@ matrix mtx_kron(matrix a, matrix b){
 matrix mtx_sylvester(matrix A, matrix B, matrix C){
     if ((A==NULL) || (B==NULL) || (C==NULL))
     if ((A->rows != A->cols) || (B->rows != B->cols) || (C->rows != A->rows) || (C->cols != B->cols)) return NULL;
-    matrix Bt,I1,I2,R1,R2,R3,vC,vS;
-    int f,c;
-    matrix S = mtx_new(C->rows, C->cols);
+    matrix Bt,I,R1,R2,vC,vS;
+    int f,c,n;
+    matrix S = NULL;
+    n = (A->rows > B->rows)? A->rows : B->rows;
+    I = mtx_eye( n , 1.0 );
+    I->rows = B->rows; I->cols = B->cols;
+    R1 = mtx_kron(I,A);
+    I->rows = A->rows; I->cols = A->cols;
     Bt = mtx_t(B);
-    I1 = mtx_eye(B->rows, 1.0);
-    I2 = mtx_eye(A->rows, 1.0);        
-    R1 = mtx_kron(I1,A);
-    mtx_del(I1);
-    R2 = mtx_kron(Bt, I2);
-    mtx_del(Bt);mtx_del(I2);
-    R3 = mtx_gadd(1.0, R1, 1.0, R2);
-    mtx_del(R1);mtx_del(R2);
+    R2 = mtx_kron(Bt, I); 
+    mtx_del(Bt);
+    I->rows = n; I->cols = n; mtx_del(I);
+    mtx_A_equal_A_plus_B(R1,R2);
+    mtx_del(R2);
     vC = mtx_vec(C);
-    vS = mtx_linsolve(R3,vC);
-    mtx_del(R3);mtx_del(vC);
+    vS = mtx_linsolve(R1,vC);
+    mtx_del(R1);
+    mtx_del(vC);
+    S = mtx_new(C->rows, C->cols);
     for(c=0;c<S->cols;c++){
         for(f=0;f<S->rows;f++){
             S->pos[f][c]=vS->pos[f+c*S->rows][0];

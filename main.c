@@ -13,17 +13,28 @@ int main(void){
                     0.0357,    0.9340,
                     0.8491,    0.6787 
                     };
-    double d[3][2]={
+    double c[3][2]={
                     0.7577,    0.6555,
                     0.7431,    0.1712,
                     0.3922,    0.7060,
                     };
+    double d[3][1]={
+                    1,
+                    2,
+                    3
+                    };
     matrix A = mtx_2dtomtx(a);
     matrix B = mtx_2dtomtx(b);
+    matrix C = mtx_2dtomtx(c);
     matrix D = mtx_2dtomtx(d);
-    mtx_dispn(A,B,D, mtx_sylvester(A,B,D));
+    matrix X = NULL;
+    matrix Y = NULL;
+    do{
+        X = mtx_sylvester(A,B,C);
+        mtx_del(X);
+    }while(1);
     mtx_del(A);
     mtx_del(B);
-    mtx_del(D);
+    mtx_del(C);
     return EXIT_SUCCESS;
 }
