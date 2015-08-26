@@ -7,26 +7,27 @@
 #include <stdlib.h>
 #include "mtx.h"
 
+double x[]={    0,     0.1000,    0.2000,    0.3000,    0.4000,    0.5000,    0.6000,    0.7000,    0.8000,    0.9000,    1.0000,    1.1000,    1.2000,    1.3000,
+            1.4000,    1.5000,    1.6000,    1.7000,    1.8000,    1.9000,    2.0000,    2.1000,    2.2000,    2.3000,    2.4000,    2.5000,    2.6000,    2.7000,
+            2.8000,    2.9000,    3.0000,    3.1000,    3.2000,    3.3000,    3.4000,    3.5000,    3.6000,    3.7000,    3.8000,    3.9000,    4.0000,    4.1000,
+            4.2000,    4.3000,    4.4000,    4.5000,    4.6000,    4.7000,    4.8000,    4.9000,    5.0000,};
+double y[]={1.2000,    1.2530,    1.3120,    1.3770,    1.4480,    1.5250,    1.6080,    1.6970,    1.7920,    1.8930,    2.0000,    2.1130,    2.2320,    2.3570,
+            2.4880,    2.6250,    2.7680,    2.9170,    3.0720,    3.2330,    3.4000,    3.5730,    3.7520,    3.9370,    4.1280,    4.3250,    4.5280,    4.7370,
+            4.9520,    5.1730,    5.4000,    5.6330,    5.8720,    6.1170,    6.3680,    6.6250,    6.8880,    7.1570,    7.4320,    7.7130,    8.0000,    8.2930,
+            8.5920,    8.8970,    9.2080,    9.5250,    9.8480,   10.1770,   10.5120,   10.8530,   11.2000,};
+
 int main(void){
-    /*Define the  using the matrix notation*/
-    matrix A = mtx_rand(4,4);
-    matrix B = mtx_rand(4,1);
-    matrix X = NULL; //holds the expression
-    matrix AB = NULL; //holds the auxiliar A*B result
-    matrix BtAB = mtx_new(1,1); // holds the auxiliar B'*A*B result 
-    double alpha = 0.8;
-    
-    /*Compute the operations*/
-    AB = mtx_prod(1.0, A,B); // AB = A*B
-    mtx_dgemm(1.0, B, 't', AB, '.', 0, BtAB); // compute B'*A*B using the generalized matrix product routine mtx_dgemm
-    X = mtx_koper(AB, '/', (alpha + BtAB->pos[0][0]) );
-    /*Display the matrices*/
-    mtx_dispn(A,B,AB,BtAB,X);
-    /*Release the heap*/
-    mtx_del(A);
-    mtx_del(B);
-    mtx_del(AB);
-    mtx_del(BtAB);
-    mtx_del(X);
+    double z[3][3]= {
+                    1,2,4,
+                    5,6,7,
+                    8,9,10
+                    };
+    double y[3][3]={
+                    0,-1,-2,
+                    -3,-4,-5,
+                    -6,-7,-8,                
+                    };
+    matrix Z = mtx_2dtomtx(z);
+    mtx_dispn(Z,mtx_expm(Z,0.1));
     return EXIT_SUCCESS;
 }

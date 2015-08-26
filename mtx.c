@@ -349,61 +349,13 @@ int mtx_dgemm(const double alpha, const matrix a, char transa, const matrix b, c
     return 0;
 }
 /*============================================================================*/
-int mtx_dgema(const double alpha, const matrix a, char transa, const double beta, const matrix b, char transb){
-    int i,j;
-    unsigned char nota=(transa!='T')&(transa!='t'),notb=(transb!='T')&(transb!='t');
-    int m,n;
-    if (notb){
-        if(nota){
-            /*=================== Form  A = alpha*A + beta*B =======================*/
-            if( (a->rows != b->rows) || (a->cols != b->cols) ) return -1;
-            for(i=0;i<a->rows;i++){
-                for(j=0;j<a->cols;j++)  a->pos[i][j] = alpha*a->pos[i][j] + beta*b->pos[i][j];                
-            }
-        }
-        else{
-            /*=================== Form  A = alpha*A' + beta*B =======================*/
-            if( (a->rows != b->cols) || (a->cols != b->rows) ) return -1;
-            for(i=0;i<b->rows;i++){
-                for(j=0;j<b->cols;j++)  a->pos[j][i] = alpha*a->pos[j][i] + beta*b->pos[i][j];                
-            }
-        }
-    }
-    else{
-        if(nota){
-            /*=================== Form  A = alpha*A + beta*B' =======================*/
-            
-        }
-        else{
-            /*=================== Form  A = alpha*A' + beta*B' =======================*/
-            if( (a->rows != b->rows) || (a->cols != b->cols) ) return -1;
-            for(i=0;i<a->rows;i++){
-                for(j=0;j<a->cols;j++)  a->pos[i][j] = alpha*a->pos[j][i] + beta*b->pos[j][i];                
-            }
-        }
-    }
-    return 0;
-}
-/*============================================================================*/
-int mtx_A_equal_A_plus_B(matrix A, const matrix B){ 
+int mtx_A_equal_A_plus_B(matrix A, const double alpha, const matrix B){ 
     if(A==NULL || B==NULL) return -1;
     if((A->cols != B->cols) ||  (A->rows != B->rows)) return -1;
     int i,j;
     for(i=0;i<A->rows;i++){
         for(j=0;j<A->cols;j++){
-            A->pos[i][j] += B->pos[i][j];
-        }
-    }
-    return 0;
-}
-/*============================================================================*/
-int mtx_A_equal_A_sub_B(matrix A, const matrix B){
-    if(A==NULL || B==NULL) return -1;
-    if((A->cols != B->cols) ||  (A->rows != B->rows)) return -1;
-    int i,j;
-    for(i=0;i<A->rows;i++){
-        for(j=0;j<A->cols;j++){
-            A->pos[i][j] = A->pos[i][j] - B->pos[i][j];
+            A->pos[i][j] += alpha*B->pos[i][j];
         }
     }
     return 0;
@@ -1008,13 +960,15 @@ matrix mtx_expm(const matrix M, const double alpha){
     matrix E = mtx_gadd(1, I,  c, A); //E = eye(size(A)) + c*A;
     matrix D = mtx_gadd(1, I, -c, A); //D = eye(size(A)) - c*A;  
     matrix cX = mtx_new(A->rows, A->cols);
+    matrix Xn = mtx_new(A->rows, A->cols);
     matrix iD = mtx_new(A->rows, A->cols);
     for(k=2;k<=q;k++,p=!p){
         c = c*(q-k+1)/(k*(2*q-k+1));
-        mtx_dgemm(1.0, A, '.', X, '.', 0, X); // X = A*X
+        mtx_dgemm(1.0, A, '.', X, '.', 0, Xn); // X = A*X
++       mtx_memcpy(X,Xn); 
         mtx_OUT_equal_kA(cX, X, c); // cX = c*X
-        mtx_A_equal_A_plus_B(E, cX); // E = E + cX;
-        mtx_dgema(1.0, D, '.', ((p==1)? 1.0: -1.0) , cX, '.');  // D = D + cX  or D = D - cX  (p depends)
+        mtx_A_equal_A_plus_B(E, 1.0, cX); // E = E + cX;
+        mtx_A_equal_A_plus_B(D,((p)? 1.0: -1.0),cX);
     }
     iD = mtx_inv(D);
     mtx_dgemm(1.0, iD, '.', E, '.', 0, I); // I = iD*E
@@ -1104,7 +1058,7 @@ matrix mtx_sylvester(matrix A, matrix B, matrix C){
     R2 = mtx_kron(Bt, I); 
     mtx_del(Bt);
     I->rows = n; I->cols = n; mtx_del(I);
-    mtx_A_equal_A_plus_B(R1,R2);
+    mtx_A_equal_A_plus_B(R1, 1.0, R2);
     mtx_del(R2);
     vC = mtx_vec(C);
     vS = mtx_linsolve(R1,vC);

@@ -95,8 +95,7 @@ matrix mtx_rand(int rows, int cols);
 matrix mtx_prod(const double alpha, const matrix A, const matrix B);
 
 int mtx_OUT_equal_AxB(matrix OUT, const double alpha, const matrix A, const matrix B);
-int mtx_A_equal_A_plus_B(matrix A, const matrix B);
-int mtx_A_equal_A_sub_B(matrix A, const matrix B);
+int mtx_A_equal_A_plus_B(matrix A, const double alpha, const matrix B);
 int mtx_A_equal_kA(matrix A, const double k);
 int mtx_OUT_equal_kA(matrix OUT,const matrix A, const double k);
 matrix mtx_inv(const matrix X);
