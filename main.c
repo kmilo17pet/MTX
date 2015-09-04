@@ -26,16 +26,15 @@ double y[]={1.2000,    1.2530,    1.3120,    1.3770,    1.4480,    1.5250,    1.
 
 int main(void){
     double a[][4]= {
-                    1,0,0,0,
-                    0,1,0,0,
-                    0,0,1,0,
-                    0,0,2,2,
+     0,     0,    0,     0,
+     0,    5,     71,     0,
+     1,     0,    0,     0,	
                     };
     matrix A = mtx_2dtomtx(a);
-    matrix U = mtx_new(4,4);
+    matrix U = mtx_new(3,4);
     matrix S = mtx_new(4,4);
     matrix V = mtx_new(4,4);
-    printf("\r\n svd retval = %d\r\n",mtx_svd(A,U,S,V));
+    mtx_svd(A,U,S,V);
     matrix t1 = mtx_prod(1,mtx_prod(1,U,S),mtx_t(V));
     mtx_dispn(A,U,S,V,t1);
     return EXIT_SUCCESS;
