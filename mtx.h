@@ -34,7 +34,8 @@ extern "C" {
 
     
 struct {
-    unsigned char rows,cols,mem;
+    unsigned char mem;
+    int rows,cols;
     double **pos; 
 }
 #if defined(__GNUC__)
@@ -77,7 +78,9 @@ matrix mtx_ndisp(int n, ...);
 #define mtx_getrows(M,F1,F2)           mtx_getsubset(M,F1,F2,0,mtx_lastc(M))                      /* M(F1:F2,:) Get columns from matrix */
 #define mtx_getcols(M,C1,C2)           mtx_getsubset(M,0,mtx_lastr(M),C1,C2)                      /* M(:,C1:C2) Get rows from matrix */    
 
-
+#ifndef _MTX_SVD_MAX_ITER_
+    #define _MTX_SVD_MAX_ITER_              (30)
+#endif
 
 matrix mtx_new(const int rows,const int cols);
 void _mtx_del(const matrix M);
@@ -151,6 +154,7 @@ int mtx_setsubset(matrix m1, const matrix m2,int f1,int f2,int c1,int c2);
 matrix mtx_kron(matrix a, matrix b);
 matrix mtx_sylvester(matrix A, matrix B, matrix C);
 matrix mtx_vec(matrix A);
+int mtx_svd(matrix a, matrix u, matrix w, matrix v);
 
 #ifdef	__cplusplus
 }

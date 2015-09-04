@@ -6,6 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mtx.h"
+#include <time.h>
+#include <unistd.h>
+#include <sys/time.h>
+
+struct timeval  tv1, tv2;
+clock_t begin, end;
+double time_spent;
+
 
 double x[]={    0,     0.1000,    0.2000,    0.3000,    0.4000,    0.5000,    0.6000,    0.7000,    0.8000,    0.9000,    1.0000,    1.1000,    1.2000,    1.3000,
             1.4000,    1.5000,    1.6000,    1.7000,    1.8000,    1.9000,    2.0000,    2.1000,    2.2000,    2.3000,    2.4000,    2.5000,    2.6000,    2.7000,
@@ -17,17 +25,18 @@ double y[]={1.2000,    1.2530,    1.3120,    1.3770,    1.4480,    1.5250,    1.
             8.5920,    8.8970,    9.2080,    9.5250,    9.8480,   10.1770,   10.5120,   10.8530,   11.2000,};
 
 int main(void){
-    double z[3][3]= {
-                    1,2,4,
-                    5,6,7,
-                    8,9,10
+    double a[][4]= {
+                    1,0,0,0,
+                    0,1,0,0,
+                    0,0,1,0,
+                    0,0,2,2,
                     };
-    double y[3][3]={
-                    0,-1,-2,
-                    -3,-4,-5,
-                    -6,-7,-8,                
-                    };
-    matrix Z = mtx_2dtomtx(z);
-    mtx_dispn(Z,mtx_expm(Z,0.1));
+    matrix A = mtx_2dtomtx(a);
+    matrix U = mtx_new(4,4);
+    matrix S = mtx_new(4,4);
+    matrix V = mtx_new(4,4);
+    printf("\r\n svd retval = %d\r\n",mtx_svd(A,U,S,V));
+    matrix t1 = mtx_prod(1,mtx_prod(1,U,S),mtx_t(V));
+    mtx_dispn(A,U,S,V,t1);
     return EXIT_SUCCESS;
 }

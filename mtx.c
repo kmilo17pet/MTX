@@ -20,6 +20,37 @@
     #include "toolbox.h"  
 #endif
 #include "mtx.h"
+
+
+static double _MTX_sqrarg;
+#define __MTX_SQR(a) (_MTX_sqrarg=(a),_MTX_sqrarg*_MTX_sqrarg)
+#define NR_END 1
+#define FREE_ARG char*
+#define _MTX_SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
+
+static double maxarg1,maxarg2;
+#define _MTX_DMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ? (maxarg1) : (maxarg2))
+static double minarg1,minarg2;
+#define _MTX_DMIN(a,b) (minarg1=(a),minarg2=(b),(minarg1) < (minarg2) ? (minarg1) : (minarg2))
+/*============================================================================*/
+double _MTX_pythag(double a, double b){ //Computes (a 2 + b 2 ) 1/2 without destructive underflow or overflow.
+    double absa,absb;
+    absa=fabs(a);
+    absb=fabs(b);
+    if (absa > absb) return absa*sqrt(1.0+__MTX_SQR(absb/absa));
+    else return (absb == 0.0 ? 0.0 : absb*sqrt(1.0+__MTX_SQR(absa/absb)));
+}
+/*============================================================================*/
+double *_MTX_vector(long nl, long nh){ ///* allocate a double vector with subscript range v[nl..nh] */
+    double *v;
+    v=(double *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(double)));
+    if (!v) perror("allocation failure in _MTX_vector()");
+    return v-nl+NR_END;
+}
+/*============================================================================*/
+void _MTX_free_vector(double *v, long nl, long nh){/* free a double vector allocated with vector() */
+	free((FREE_ARG) (v+nl-NR_END));
+}
 /*============================================================================*/
 matrix mtx_new(const int rows,const int cols){
     if (cols<=0 || rows<=0) return NULL;
@@ -143,7 +174,8 @@ matrix mtx_gadd(const double alpha, const matrix A, const double beta, const mat
     for (i=0;i<A->rows;i++){
         for (j=0;j<A->cols;j++)
             C->pos[i][j]=alpha*A->pos[i][j] + beta*B->pos[i][j];
-    }    
+    } 
+       
     return C;
 }
 /*============================================================================*/
@@ -1084,5 +1116,193 @@ matrix mtx_vec(matrix A){
         }
     }
     return v;
+}
+/*============================================================================*/
+int mtx_svd(matrix a, matrix u, matrix w, matrix v){
+    if (a==NULL || u==NULL || w==NULL || v==NULL) return -1;
+    if ((a->rows != u->rows) || (a->cols != u->cols)) return -1;
+    int n=a->cols;
+    int m=a->rows;
+    int length_a=mtx_length(a);
+    if ((w->rows != w->cols) || (w->rows != length_a)) return -1;
+    if ((v->rows != v->cols) || (v->rows != a->cols)) return -1;
+    mtx_memcpy(u,a);
+    int flag,i,its,j,jj,k,l,nm;
+    double anorm,c,f,g,h,s,scale,x,y,z,*rv1;
+    rv1=(double*)calloc(n,sizeof(double));
+    if (!rv1) return -1;
+    g=scale=anorm=0.0;
+    for (i=0;i<n;i++) {
+        l=i+1;
+        rv1[i]=scale*g;
+        g=s=scale=0.0;
+        if (i < m) {
+            for (k=i;k<m;k++) scale += fabs(u->pos[k][i]);
+            if (scale) {
+                for (k=i;k<m;k++) {
+                    u->pos[k][i] /= scale;
+                    s += u->pos[k][i]*u->pos[k][i];
+                }
+                f=u->pos[i][i];
+                g = -_MTX_SIGN(sqrt(s),f);
+                h=f*g-s;
+                u->pos[i][i]=f-g;
+                for (j=l;j<n;j++) {
+                    for (s=0.0,k=i;k<m;k++) s += u->pos[k][i]*u->pos[k][j];
+                    f=s/h;
+                    for (k=i;k<m;k++) u->pos[k][j] += f*u->pos[k][i];
+                }
+                for (k=i;k<m;k++) u->pos[k][i] *= scale;
+            }
+        }
+        w->pos[i][i]=scale *g;
+        g=s=scale=0.0;
+        if (i < m && i != n-1) {
+            for (k=l;k<n;k++) scale += fabs(u->pos[i][k]);
+                if (scale) {
+                    for (k=l;k<n;k++) {
+                        u->pos[i][k] /= scale;
+                        s += u->pos[i][k]*u->pos[i][k];
+                    }
+                    f=u->pos[i][l];
+                    g = -_MTX_SIGN(sqrt(s),f);
+                    h=f*g-s;
+                    u->pos[i][l]=f-g;
+                    for (k=l;k<n;k++) rv1[k]=u->pos[i][k]/h;
+                    for (j=l;j<m;j++) {
+                        for (s=0.0,k=l;k<n;k++) s += u->pos[j][k]*u->pos[i][k];
+                        for (k=l;k<n;k++) u->pos[j][k] += s*rv1[k];
+                    }
+                    for (k=l;k<n;k++) u->pos[i][k] *= scale;
+                }
+        }
+        anorm=_MTX_DMAX(anorm,(fabs(w->pos[i][i])+fabs(rv1[i])));
+    }   
+    for (i=n-1;i>=0;i--) { //Accumulation of right-hand transformations.
+        if (i < n-1) {
+            if (g) {
+                for (j=l;j<n;j++) //Double division to avoid possible underflow.
+                v->pos[j][i]=(u->pos[i][j]/u->pos[i][l])/g;
+                for (j=l;j<n;j++) {
+                    for (s=0.0,k=l;k<n;k++) s += u->pos[i][k]*v->pos[k][j];
+                    for (k=l;k<n;k++) v->pos[k][j] += s*v->pos[k][i];
+                }   
+            }
+            for (j=l;j<n;j++) v->pos[i][j]=v->pos[j][i]=0.0;
+        }
+        v->pos[i][i]=1.0;
+        g=rv1[i];
+        l=i;
+    }
+    for (i=_MTX_DMIN(m-1,n-1);i>=0;i--) { //Accumulation of left-hand transformations.
+        l=i+1;
+        g=w->pos[i][i];
+        for (j=l;j<n;j++) u->pos[i][j]=0.0;
+            if (g) {
+                g=1.0/g;
+                for (j=l;j<n;j++) {
+                    for (s=0.0,k=l;k<m;k++) s += u->pos[k][i]*u->pos[k][j];
+                    f=(s/u->pos[i][i])*g;
+                    for (k=i;k<m;k++) u->pos[k][j] += f*u->pos[k][i];
+                }
+                for (j=i;j<m;j++) u->pos[j][i] *= g;
+            }
+            else for (j=i;j<m;j++) u->pos[j][i]=0.0;
+            ++u->pos[i][i];
+    }
+    for (k=n-1;k>=0;k--) { //Diagonalization of the bidiagonal form: Loop over singular values, and over allowed iterations.       
+        for (its=1;its<=_MTX_SVD_MAX_ITER_;its++) {
+            flag=1;
+            for (l=k;l>=0;l--) { //Test for splitting.
+                nm=l-1; //Note that rv1[1] is always zero.
+                if ((double)(fabs(rv1[l])+anorm) == anorm) {
+                    flag=0;
+                    break;
+                }
+                if ((double)(fabs(w->pos[nm][nm])+anorm) == anorm) break;
+            }
+            if (flag) {
+                c=0.0; //Cancellation of rv1[l], if l > 1.
+                s=1.0;
+                for (i=l;i<k;i++) {
+                    f=s*rv1[i];
+                    rv1[i]=c*rv1[i];
+                    if ((double)(fabs(f)+anorm) == anorm) break;
+                    g=w->pos[i][i];
+                    h=_MTX_pythag(f,g);
+                    w->pos[i][i]=h;
+                    h=1.0/h;
+                    c=g*h;
+                    s = -f*h;
+                    for (j=0;j<m;j++) {
+                        y=u->pos[j][nm];
+                        z=u->pos[j][i];
+                        u->pos[j][nm]=y*c+z*s;
+                        u->pos[j][i]=z*c-y*s;
+                    }
+                }
+            }
+
+        z=w->pos[k][k];
+        if (l == k) { //Convergence.
+            if (z < 0.0) { //Singular value is made nonnegative.
+                w->pos[k][k] = -z;
+                for (j=0;j<n;j++) v->pos[j][k] = -v->pos[j][k];
+            }
+            break;
+        }
+        if (its == _MTX_SVD_MAX_ITER_) return -1; //perror("no convergence in 30 svdcmp iterations");
+        x=w->pos[l][l]; //Shift from bottom 2-by-2 minor.
+        nm=k;
+        y=w->pos[nm][nm];
+        g=rv1[nm];
+        h=rv1[k];
+        f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
+        g=_MTX_pythag(f,1.0);
+        f=((x-z)*(x+z)+h*((y/(f+_MTX_SIGN(g,f)))-h))/x;
+        c=s=1.0; //Next QR transformation:
+        for (j=l;j<nm;j++) {
+            i=j+1;
+            g=rv1[i];
+            y=w->pos[i][i];
+            h=s*g;
+            g=c*g;
+            z=_MTX_pythag(f,h);
+            rv1[j]=z;
+            c=f/z;
+            s=h/z;
+            f=x*c+g*s;
+            g = g*c-x*s;
+            h=y*s;
+            y *= c;
+            for (jj=0;jj<n;jj++) {
+                x=v->pos[jj][j];
+                z=v->pos[jj][i];
+                v->pos[jj][j]=x*c+z*s;
+                v->pos[jj][i]=z*c-x*s;
+            }
+            z=_MTX_pythag(f,h);
+            w->pos[j][j]=z; //Rotation can be arbitrary if z = 0.
+            if (z) {
+                z=1.0/z;
+                c=f*z;
+                s=h*z;
+            }
+            f=c*g+s*y;
+            x=c*y-s*g;
+            for (jj=0;jj<m;jj++) {
+                y=u->pos[jj][j];
+                z=u->pos[jj][i];
+                u->pos[jj][j]=y*c+z*s;
+                u->pos[jj][i]=z*c-y*s;
+            }
+        }
+        rv1[l]=0.0;
+        rv1[k]=f;
+        w->pos[k][k]=x;
+        }
+    }
+    free(rv1);
+    return 0;
 }
 /*============================================================================*/
