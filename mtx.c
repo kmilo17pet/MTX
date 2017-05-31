@@ -32,6 +32,16 @@ static double maxarg1,maxarg2;
 #define _MTX_DMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ? (maxarg1) : (maxarg2))
 static double minarg1,minarg2;
 #define _MTX_DMIN(a,b) (minarg1=(a),minarg2=(b),(minarg1) < (minarg2) ? (minarg1) : (minarg2))
+
+static CALLOC_FT_t mtx_calloc_wrapper = NULL;
+static FREE_FT_t mtx_free_wrapper = NULL;
+
+
+/*============================================================================*/
+void mtx_assign_heap_wrappers(CALLOC_FT_t func_calloc, FREE_FT_t fun_free){
+    mtx_calloc_wrapper = func_calloc;
+    mtx_free_wrapper = fun_free;
+}
 /*============================================================================*/
 double _MTX_pythag(double a, double b){ //Computes (a^2 + b^2 )^1/2 without destructive underflow or overflow.
     double absa=fabs(a),absb=fabs(b);
@@ -43,20 +53,20 @@ matrix mtx_new(const int rows,const int cols){
     if (cols<=0 || rows<=0) return NULL;
     matrix m;
     int i;
-    m=(matrix)malloc(sizeof(_Matrix));
+    m=(matrix)mtx_calloc_wrapper(1, sizeof(_Matrix));  
     if (m==NULL) return NULL;
     
-    m->pos =(double**) calloc(rows,sizeof(double*));
+    m->pos =(double**) mtx_calloc_wrapper(rows,sizeof(double*));
     if (m->pos==NULL){
-        free(m);
+        mtx_free_wrapper(m);
         return NULL;
     }
     
     for (i=0;i<rows;i++){
-        m->pos[i]=(double*)calloc(cols,sizeof(double));
+        m->pos[i]=(double*)mtx_calloc_wrapper(cols,sizeof(double));
         if (m->pos[i]==NULL){
-            free(m->pos);
-            free(m);
+            mtx_free_wrapper(m->pos);
+            mtx_free_wrapper(m);
             return NULL;
         }
     }
@@ -71,10 +81,10 @@ void _mtx_del(const matrix M){
     int i=0;
     if(!M->mem){
         for (i=0;i<M->rows;i++)
-            free(M->pos[i]);
+            mtx_free_wrapper(M->pos[i]);
     }
-    free(M->pos);
-    free(M);    
+    mtx_free_wrapper(M->pos);
+    mtx_free_wrapper(M);    
 }
 /*============================================================================*/
 matrix mtx_cpy(const matrix M){
@@ -112,6 +122,7 @@ double mtx_trace(const matrix A){
     return trace;
 }
 /*============================================================================*/
+#ifdef MTX_PRINTOUT
 void mtx_disp(const matrix M){
     if (M==NULL || (int)((intptr_t)M)==0) {puts("(0,0)=| |\n");return;}   
     if (((M->rows)==0)||((M->cols)<=0)) {puts("(0,0)=| |\n");return;}
@@ -129,7 +140,7 @@ void mtx_disp(const matrix M){
     putchar('\n');
 }
 /*============================================================================*/
-matrix mtx_ndisp(int n, ...){
+void mtx_ndisp(int n, ...){
    int v;
    va_list param_pt;
    va_start(param_pt, n);
@@ -138,8 +149,8 @@ matrix mtx_ndisp(int n, ...){
             if ((int)((intptr_t)m)==-1) break;
         mtx_disp(m);
    }
-   return NULL;
 }
+#endif
 /*============================================================================*/
 matrix mtx_t(const matrix A){
     if(A==NULL) return NULL;
@@ -888,12 +899,12 @@ matrix mtx_sum(const matrix m){
 }
 /*============================================================================*/
 matrix mtx_2d2mtx(const double *array2d,const int nf,const int nc){
-    matrix mout = (matrix) malloc(sizeof(_Matrix));
+    matrix mout = (matrix) mtx_calloc_wrapper(1, sizeof(_Matrix));
     mout->rows = nf;
     mout->cols = nc;
     mout->mem  = 1;
     int f;
-    mout->pos =(double**) calloc(nf,sizeof(double*));
+    mout->pos =(double**) mtx_calloc_wrapper(nf,sizeof(double*));
     for (f=0;f<nf;f++){
         mout->pos[f] = (double*)array2d+f*nc;
     }  
@@ -901,11 +912,11 @@ matrix mtx_2d2mtx(const double *array2d,const int nf,const int nc){
 }
 /*============================================================================*/
 matrix mtx_1d2mtx(const double *array1d, const int arraylength){
-    matrix mout = (matrix) malloc(sizeof(_Matrix));
+    matrix mout = (matrix) mtx_calloc_wrapper(1, sizeof(_Matrix));
     mout->rows = arraylength;
     mout->cols = 1;
     mout->mem = 1;
-    mout->pos = (double**) calloc(arraylength,sizeof(double*));
+    mout->pos = (double**) mtx_calloc_wrapper(arraylength,sizeof(double*));
     int f;
     for (f=0;f<arraylength;f++){
         mout->pos[f] = (double*)array1d+f;
@@ -1002,7 +1013,7 @@ matrix mtx_expm(const matrix M, const double alpha){
 /*============================================================================*/
 matrix mtx_lspcf(double *X, double *Y, int n, int m){ //least-squares polynomial curve fitting
     if (n<1) return NULL;    
-    double *Sx = (double*)malloc((2*n+1)*sizeof(double));
+    double *Sx = (double*)mtx_calloc_wrapper((2*n+1), sizeof(double));
     matrix Q = mtx_new(n+1,1);
     matrix M = mtx_new(n+1,n+1);
     int i,j;
@@ -1016,7 +1027,7 @@ matrix mtx_lspcf(double *X, double *Y, int n, int m){ //least-squares polynomial
         for(j=0;j<n+1;j++) M->pos[i][j]=Sx[j+i];
     }
     matrix R = mtx_linsolve(M,Q);
-    free(Sx);
+    mtx_free_wrapper(Sx);
     mtx_del(M);mtx_del(Q);
     return R;
 }
@@ -1252,7 +1263,7 @@ int mtx_svd(matrix a, matrix u, matrix w, matrix v){
                 break;
             }
             if (its >= _MTX_SVD_MAX_ITER_){  //perror("no convergence in 30 svdcmp iterations");
-                free(rv1);
+                mtx_free_wrapper(rv1);
                 return -1;
             }
             x = w->pos[l][l]; //Shift from bottom 2-by-2 minor.
@@ -1305,7 +1316,7 @@ int mtx_svd(matrix a, matrix u, matrix w, matrix v){
             w->pos[k][k] = x;
         }
     }
-    free(rv1);
+    mtx_free_wrapper(rv1);
     return 0;
 }
 /*============================================================================*/

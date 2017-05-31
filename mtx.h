@@ -47,13 +47,20 @@ typedef _Matrix, *matrix;
 #endif
     
     
-#define MTX_PRINT_FORMAT    "%8.7g\t"
+
 #define MATRIX              matrix
 #define Matrix              matrix
-#define mtx_show(M)         fputs("["#M"]",stdout);mtx_disp(M);\
-         
-#define mtx_dispn(args...)  mtx_ndisp(50,args,-1)
-matrix mtx_ndisp(int n, ...);
+
+//#define MTX_PRINTOUT
+
+#ifdef MTX_PRINTOUT
+    #define MTX_PRINT_FORMAT    "%8.7g\t"
+    #define mtx_show(M)         fputs("["#M"]",stdout);mtx_disp(M);\
+
+    #define mtx_dispn(args...)  mtx_ndisp(50,args,-1)
+    void mtx_disp(const matrix M);
+    void mtx_ndisp(int n, ...);
+#endif
 
 #define mtxdef(_VAR_)       matrix _VAR_=NULL
 #define mtx_del(M)          _mtx_del(M);M=NULL
@@ -82,13 +89,17 @@ matrix mtx_ndisp(int n, ...);
     #define _MTX_SVD_MAX_ITER_              (30)
 #endif
 
+
+typedef void* (*CALLOC_FT_t)(size_t , size_t);
+typedef void (*FREE_FT_t)(void*);
+
+void mtx_assign_heap_wrappers(CALLOC_FT_t func_calloc, FREE_FT_t fun_free);
 matrix mtx_new(const int rows,const int cols);
 void _mtx_del(const matrix M);
 matrix mtx_cpy(const matrix M);
 matrix mtx_eye(int n, const double alpha);
 matrix mtx_diag(const matrix m);
 double mtx_trace(const matrix A);
-void mtx_disp(const matrix M);
 matrix mtx_t(const matrix A);                   
 matrix mtx_gadd(const double alpha, const matrix A, const double beta, const matrix B);
 matrix mtx_ptpprod(const matrix A, const matrix B);
